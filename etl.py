@@ -2,8 +2,9 @@ import configparser
 from datetime import datetime
 import os
 from pyspark.sql import SparkSession
+from pyspark.sql.types import TimestampType
 from pyspark.sql.functions import udf, col
-from pyspark.sql.functions import year, month, dayofmonth, hour, weekofyear, date_format
+from pyspark.sql.functions import year, month, dayofmonth, hour, weekofyear, date_format, dayofweek
 
 
 config = configparser.ConfigParser()
@@ -68,9 +69,9 @@ def process_log_data(spark, input_data, output_data):
         None
     """
         
-    log_data = os.path.join(input_data, "log-data/")
+    log_data = os.path.join(input_data,"log_data/*/*/*.json")
     df = spark.read.json(log_data, mode='PERMISSIVE', columnNameOfCorruptRecord='corrupt_record').drop_duplicates()
-    df =  df.filter(df.page == "NextSong")
+    df = df.filter(df.page == "NextSong")
    
     # users table
     users_table  = df.select("userId","firstName","lastName","gender","level").drop_duplicates()
@@ -84,15 +85,17 @@ def process_log_data(spark, input_data, output_data):
                     .withColumn("month",month("start_time")).withColumn("year",year("start_time"))\
                     .withColumn("weekday",dayofweek("start_time"))\
                     .select("ts","start_time","hour", "day", "week", "month", "year", "weekday").drop_duplicates()                      
-    time_table.write.parquet(os.path.join(output_data, "time_table/"), mode='overwrite', partitionBy=["year","month"])
+    time_table.write.parquet(os.path.join(output_data, "time/"), mode='overwrite', partitionBy=["year","month"])
     
     # Songplayes table
     song_df = spark.read.format("parquet").option("basePath", output_data + "songs/").load(output_data +"songs/*/*/")
-    df = df.join(song_df, (song_df.title == df.song) & (song_df.artist_name == df.artist))
-    df = df.withColumn('songplay_id', monotonically_increasing_id()) 
-    songplays_table = df['songplay_id','start_time', 'userId', 'level', 'song_id', 'artist_id', 'sessionId', 'location', 'userAgent']
-    songplays_table.drop_duplicates().write.parquet(os.path.join(output_data, "songplays/"), mode="overwrite", partitionBy=["year","month"])
+    
+    song_plays_table = df.join(song_df, df.song == song_df.title, how='inner')\
+                        .select(monotonically_increasing_id().alias("songplay_id"),col("start_time"),col("userId").alias("user_id"),"level","song_id","artist_id", col("sessionId")\
+                        .alias("session_id"), "location", col("userAgent").alias("user_agent"))
 
+    song_plays_table = songplays_table.join(time_table, song_plays_table.start_time == time_table.start_time, how="inner")\
+                        .select("songplay_id", song_plays_table.start_time, "user_id", "level", "song_id", "artist_id", "session_id", "location", "user_agent", "year", "month")
 
 def main():
     """
