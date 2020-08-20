@@ -3,7 +3,7 @@ from datetime import datetime
 import os
 from pyspark.sql import SparkSession
 from pyspark.sql.types import TimestampType
-from pyspark.sql.functions import udf, col
+from pyspark.sql.functions import udf, col, monotonically_increasing_id
 from pyspark.sql.functions import year, month, dayofmonth, hour, weekofyear, date_format, dayofweek
 
 
@@ -78,14 +78,25 @@ def process_log_data(spark, input_data, output_data):
     users_table = users_table.write.parquet(output_data + "users/", mode="overwrite")
 
     # time table
-    get_timestamp = udf(lambda x : datetime.utcfromtimestamp(int(x)/1000), TimestampType())
-    df = df.withColumn("start_time", get_timestamp("ts"))
-    time_table = df.withColumn("hour",hour("start_time")).withColumn("day",dayofmonth("start_time"))\
-                    .withColumn("week",weekofyear("start_time"))\
-                    .withColumn("month",month("start_time")).withColumn("year",year("start_time"))\
-                    .withColumn("weekday",dayofweek("start_time"))\
-                    .select("ts","start_time","hour", "day", "week", "month", "year", "weekday").drop_duplicates()                      
-    time_table.write.parquet(os.path.join(output_data, "time/"), mode='overwrite', partitionBy=["year","month"])
+    get_date = udf(lambda x: datetime.fromtimestamp(int(int(x)/1000)), TimestampType())
+    get_weekday = udf(lambda x: x.weekday())
+    get_week = udf(lambda x: datetime.isocalendar(x)[1])
+    get_hour = udf(lambda x: x.hour)
+    get_day = udf(lambda x : x.day)
+    get_year = udf(lambda x: x.year)
+    get_month = udf(lambda x: x.month)
+
+    df = df.withColumn('start_time', get_datetime(df.ts))
+    df = df.withColumn('hour', get_hour(df.start_time))
+    df = df.withColumn('day', get_day(df.start_time))
+    df = df.withColumn('week', get_week(df.start_time))
+    df = df.withColumn('month', get_month(df.start_time))
+    df = df.withColumn('year', get_year(df.start_time))
+    df = df.withColumn('weekday', get_weekday(df.start_time))
+    time_table  = df['start_time', 'hour', 'day', 'week', 'month', 'year', 'weekday']
+    time_table = time_table.drop_duplicates(subset=['start_time'])
+    time_table.write.partitionBy('year', 'month').parquet(os.path.join(output_data, 'time'), 'overwrite')
+
     
     # Songplayes table
     song_df = spark.read.format("parquet").option("basePath", output_data + "songs/").load(output_data +"songs/*/*/")

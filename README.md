@@ -25,39 +25,10 @@ The database scheme is star-scheme based, to improve the queries logic and perfo
 Songplays table is the fact table, while the artists, songs and users are dimension tables.
 
 ___
-## example 
+## Running
 
-#### count of male users for each location
-
-
-```SQL
-SELECT 
-    location, count(*) 
-FROM 
-    songplays 
-JOIN users 
-    on (songplays.user_id = users.user_id)
-WHERE 
-    gender = 'M'
-GROUP BY 
-    location;
-```
-
-
-| location      | count       |
-| ------------- |:-------------:| 
-| Tampa-St. Petersburg-Clearwater, FL | 16   |
-| San Jose-Sunnyvale-Santa Clara, CA  | 25   | 
-| Houston-The Woodlands-Sugar Land, TX|  9   |
-| Birmingham-Hoover, AL               | 4761 | 
-| San Francisco-Oakland-Hayward, CA   | 1    | 
-| Yuba City, CA                       | 25   | 
-| Eureka-Arcata-Fortuna, CA           | 1    | 
-| Youngstown-Warren-Boardman, OH-PA   | 1    | 
-| Red Bluff, CA                       | 4    | 
-| New Orleans-Metairie, LA            | 16   | 
-| Minneapolis-St. Paul-Bloomington, MN-WI| 16| 
-| New York-Newark-Jersey City, NY-NJ-PA | 1    | 
-| Dallas-Fort Worth-Arlington, TX       | 1    | 
-| Columbia, SC                        | 9   | 
-
+1. Create EMR cluster on AWS.
+2. Update the output location on _etl.py_
+3. Update your AWS keys on _dl.cfg_
+4. Run the following command in the console.
+`python etl.py`
