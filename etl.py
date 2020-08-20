@@ -95,7 +95,7 @@ def process_log_data(spark, input_data, output_data):
     df = df.withColumn('weekday', get_weekday(df.start_time))
     time_table  = df['start_time', 'hour', 'day', 'week', 'month', 'year', 'weekday']
     time_table = time_table.drop_duplicates(subset=['start_time'])
-    time_table.write.partitionBy('year', 'month').parquet(os.path.join(output_data, 'time'), 'overwrite')
+    time_table.write.partitionBy('year', 'month').parquet(os.path.join(output_data, 'time'), mode='overwrite')
 
     
     # Songplayes table
