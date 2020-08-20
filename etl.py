@@ -86,7 +86,7 @@ def process_log_data(spark, input_data, output_data):
     get_year = udf(lambda x: x.year)
     get_month = udf(lambda x: x.month)
 
-    df = df.withColumn('start_time', get_datetime(df.ts))
+    df = df.withColumn('start_time', get_date(df.ts))
     df = df.withColumn('hour', get_hour(df.start_time))
     df = df.withColumn('day', get_day(df.start_time))
     df = df.withColumn('week', get_week(df.start_time))
