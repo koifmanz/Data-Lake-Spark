@@ -14,7 +14,9 @@ Sparkify asks for db for improvent in their db, because their user base has grow
 ___
 ## database schema
 
-The first dataset is a subset of real data from the Million Song Dataset. Each file is in JSON format and contains metadata about a song and the artist of that song
+The first dataset is a subset of real data from the Million Song Dataset. Each file is in JSON format and contains metadata about a song and the artist of that song.
+
+
 example from log file:
 ```
 {"num_songs": 1, "artist_id": "ARJIE2Y1187B994AB7", "artist_latitude": null, "artist_longitude": null, "artist_location": "", "artist_name": "Line Renaud", "song_id": "SOUPIRU12A6D4FA1E1", "title": "Der Kleine Dompfaff", "duration": 152.92036, "year": 0}
@@ -32,3 +34,5 @@ ___
 3. Update your AWS keys on _dl.cfg_
 4. Run the following command in the console.
 `python etl.py`
+
+**Note**: Make sure to not upload your keys to github / another services.
