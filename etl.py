@@ -108,6 +108,8 @@ def process_log_data(spark, input_data, output_data):
     song_plays_table = songplays_table.join(time_table, song_plays_table.start_time == time_table.start_time, how="inner")\
                         .select("songplay_id", song_plays_table.start_time, "user_id", "level", "song_id", "artist_id", "session_id", "location", "user_agent", "year", "month")
 
+    songplays_table.drop_duplicates().write.parquet(os.path.join(output_data, "song_plays/"), mode="overwrite", partitionBy=["year","month"])
+
 def main():
     """
     Description: running the ETL process, by calling process functions. 
